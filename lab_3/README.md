@@ -59,7 +59,3 @@ Bayes gives the highest accuracy on these patches  All four predictions classify
 Increasing k gives individual training pixels less influence, but the accuracy falls on these patches  The maps change for 1.35% of valid pixels between k = 1 and 3, and for 0.73% between k = 3 and 5  Of these values, k = 1 gives the best kNN accuracy for the selected patches
 
 The reference labels are visual estimates and cover only a small part of the mosaic  Since the test crops come from the same scenes as the training patches, these scores do not show how well the models work on a separate acquisition
-
-## Running the notebook
-
-Open [lab3.ipynb](lab3.ipynb) from the repository root or the `lab_3` folder and run the cells in order  The notebook loads the images from `lab_2/images` using relative paths
