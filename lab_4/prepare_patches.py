@@ -72,6 +72,28 @@ def patch_features(red, nir, scl):
     return red[clear].mean(), nir[clear].mean(), clear_fraction
 
 
+def summarize_patch(cover, red, nir, scl):
+    """Return the label and band statistics for one eligible patch."""
+    forest = (cover == 10).mean()
+    urban = (cover == 50).mean()
+    if max(forest, urban) < CLASS_FRACTION:
+        return None
+
+    features = patch_features(red, nir, scl)
+    if features is None:
+        return None
+
+    mean_red, mean_nir, clear = features
+    return {
+        "label": "forest" if forest > urban else "urban",
+        "forest_fraction": forest,
+        "urban_fraction": urban,
+        "clear_fraction": clear,
+        "mean_red": mean_red,
+        "mean_nir": mean_nir,
+    }
+
+
 def collect_patches(region, longitude, latitude, split, item):
     assets = item["assets"]
     with rasterio.open(assets["red"]["href"]) as source:
@@ -98,21 +120,14 @@ def collect_patches(region, longitude, latitude, split, item):
     for row in range(0, size, PATCH_SIZE):
         for col in range(0, size, PATCH_SIZE):
             patch = np.s_[row:row + PATCH_SIZE, col:col + PATCH_SIZE]
-            forest = (cover[patch] == 10).mean()
-            urban = (cover[patch] == 50).mean()
-            if max(forest, urban) < CLASS_FRACTION:
+            summary = summarize_patch(cover[patch], red[patch], nir[patch], scl[patch])
+            if summary is None:
                 continue
-            features = patch_features(red[patch], nir[patch], scl[patch])
-            if features is None:
-                continue
-            mean_red, mean_nir, clear = features
             rows.append({
                 "region": region, "split": split, "scene_id": item["id"],
                 "date": item["properties"]["datetime"][:10], "epsg": crs.to_epsg(),
                 "row": int(window.row_off) + row, "col": int(window.col_off) + col,
-                "label": "forest" if forest > urban else "urban",
-                "forest_fraction": forest, "urban_fraction": urban,
-                "clear_fraction": clear, "mean_red": mean_red, "mean_nir": mean_nir,
+                **summary,
             })
 
     return rows
